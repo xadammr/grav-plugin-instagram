@@ -88,7 +88,12 @@ class InstagramPlugin extends Plugin
 
         // Get the results from the live API, cached version not found
         if ($results === null) {
-            $results = Response::get($url);
+            try {
+                $results = Response::get($url);
+            } catch (\RuntimeException $e) {
+                $this->grav['log']->error($e->getMessage());
+                return;
+            }
 
             // Cache the results
             $this->cache->set($url, $results, InstagramPlugin::HOUR_IN_SECONDS * $config->get('feed_parameters.cache_time')); // Convert hours to seconds
