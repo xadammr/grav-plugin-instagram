@@ -1,5 +1,6 @@
 {
   "require": {
-    "ext-json": "*"
+    "ext-json": "*",
+    "espresso-dev/instagram-basic-display-php": "^1.1.2"
   }
 }
