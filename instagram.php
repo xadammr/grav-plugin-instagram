@@ -7,6 +7,7 @@ use Grav\Common\Plugin;
 use Grav\Common\Data\Data;
 use Grav\Common\Page\Page;
 use Grav\Common\GPM\Response;
+use EspressoDev\InstagramBasicDisplay\InstagramBasicDisplay;
 
 class InstagramPlugin extends Plugin
 {
@@ -69,8 +70,8 @@ class InstagramPlugin extends Plugin
         $cache = $this->grav['cache'];
 
         // Generate API url
-        $url = 'https://api.instagram.com/v1/users/self/media/recent/?access_token=' . $config->get('feed_parameters.access_token') . '&count=' . $config->get('feed_parameters.count');
-        $cacheKey = 'instagram-' . md5($url);
+        $instagram = new InstagramBasicDisplay($config->get('feed_parameters.access_token'));
+        $cacheKey = 'instagram-' . md5($config->get('feed_parameters.access_token'));
 
         $template_vars = $cache->fetch($cacheKey);
 
@@ -99,7 +100,7 @@ class InstagramPlugin extends Plugin
 
         }
 
-        $output = $this->grav['twig']->twig()->render(InstagramPlugin::template_html, $template_vars);
+        //$output = $this->grav['twig']->twig()->render(InstagramPlugin::template_html, $template_vars);
         return $output;
 
     }
