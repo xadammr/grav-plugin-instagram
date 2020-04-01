@@ -6,4 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'EspressoDev\\InstagramBasicDisplay\\' => array($vendorDir . '/espresso-dev/instagram-basic-display-php/src'),
 );

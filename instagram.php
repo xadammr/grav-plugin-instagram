@@ -9,10 +9,12 @@ use Grav\Common\Page\Page;
 use Grav\Common\GPM\Response;
 use EspressoDev\InstagramBasicDisplay\InstagramBasicDisplay;
 
+require __DIR__ . '/vendor/autoload.php';
+
 class InstagramPlugin extends Plugin
 {
     private const template_html = 'partials/instagram.html.twig';
-    private $feeds;
+    private $feeds = [];
     const HOUR_IN_SECONDS = 3600;
 
     /**
@@ -71,23 +73,40 @@ class InstagramPlugin extends Plugin
 
         // Generate API url
         $instagram = new InstagramBasicDisplay($config->get('feed_parameters.access_token'));
+        $numPosts = $config->get('feed_parameters.count');
         $cacheKey = 'instagram-' . md5($config->get('feed_parameters.access_token'));
 
         $template_vars = $cache->fetch($cacheKey);
-
+        
         // Get the results from the live API, cached version not found
         if (!$template_vars) {
             try {
-                $results = Response::get($url);
+                $results = $instagram->getUserMedia();
             } catch (\RuntimeException $e) {
                 $this->grav['log']->error($e->getMessage());
                 return;
             }
 
-            if ($this->parseResponse($results)) { // Successfully parsed the feed
+            $posts = [];
+
+            if (isset($results->data)) {
+                $posts = array_map(function ($i) {
+                    return [
+                        'media_url' => $i->media_url,
+                        'permalink' => $i->permalink,
+                        'timestamp' => $i->timestamp,
+                        'id' => $i->id,
+                        'type' => $i->media_type,
+                        //'raw' => $i,
+                    ];
+                }, $results->data);
+            } else {
+                $this->grav['log']->error("No Instagram posts found.");
+            }
+            
+            if ($this->parseResponse($posts)) { // Successfully parsed the feed
                 $template_vars = [
-                    'user_id' => $config->get('feed_parameters.user_id'),
-                    'client_id' => $config->get('feed_parameters.client_id'),
+                    'token' => $config->get('feed_parameters.access_token'),
                     'feed' => $this->feeds,
                     'count' => $config->get('feed_parameters.count'),
                     'params' => $params
@@ -95,46 +114,37 @@ class InstagramPlugin extends Plugin
                 $cache->save($cacheKey, $template_vars,
                     InstagramPlugin::HOUR_IN_SECONDS * $config->get('feed_parameters.cache_time'));
             } else { // Didn't return a feed or couldn't parse what was returned
+                $this->grav['log']->error("getFeed(): Could not parse feed");
                 return;
             }
 
         }
 
-        //$output = $this->grav['twig']->twig()->render(InstagramPlugin::template_html, $template_vars);
+        //$output = print_r($this->feeds);
+        $output = $this->grav['twig']->twig()->render(InstagramPlugin::template_html, $template_vars);
         return $output;
-
     }
 
-    private function addFeed($result)
-    {
+    private function addFeed($result) {
         foreach ($result as $key => $val) {
             if (!isset($this->feeds[$key])) {
                 $this->feeds[$key] = $val;
             }
         }
-        krsort($this->feeds);
+        //krsort($this->feeds);
     }
 
-    private function parseResponse($json)
-    {
+    private function parseResponse($arr) {
         $r = array();
-        $content = json_decode($json, true);
-        if ((is_array($content['data']) || $content['data'] instanceof \Countable) && count($content['data'])) {
-            foreach ($content['data'] as $key => $val) {
-                $created_at = $val['created_time'];
-                $r[$created_at]['time'] = $created_at;
-                $r[$created_at]['text'] = $val['caption']['text'];
-                $r[$created_at]['image'] = $val['images']['standard_resolution']['url'];
-                $r[$created_at]['image_width'] = $val['images']['standard_resolution']['width'];
-                $r[$created_at]['thumb'] = $val['images']['low_resolution']['url'];
-                $r[$created_at]['thumb_width'] = $val['images']['low_resolution']['width'];
-                $r[$created_at]['micro'] = $val['images']['thumbnail']['url'];
-                $r[$created_at]['micro_width'] = $val['images']['thumbnail']['width'];
-                $r[$created_at]['user'] = $val['user']['full_name'];
-                $r[$created_at]['link'] = $val['link'];
-                $r[$created_at]['comments'] = $val['comments']['count'];
-                $r[$created_at]['likes'] = $val['likes']['count'];
-                $r[$created_at]['type'] = $val['type'];
+
+        if ((is_array($arr) || $arr instanceof \Countable) && count($arr)) {
+            foreach ($arr as $key => $val) {
+                $id = (int)$val['id'];
+
+                $r[$id] = array();
+                $r[$id]['image'] = $val['media_url'];
+                $r[$id]['type'] = $val['type'];
+                $r[$id]['link'] = $val['permalink'];
             }
             $this->addFeed($r);
             return true;
