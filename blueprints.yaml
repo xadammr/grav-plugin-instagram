@@ -40,7 +40,7 @@ form:
           validate:
             type: number
             min: 1
-            max: 20
+            max: 24
 
         feed_parameters.cache_time:
           type: text
@@ -53,21 +53,11 @@ form:
             min: 1
             max: 65535
 
-        feed_parameters.user_id:
-          type: text
-          size: small
-          label: User id
-          help: Instagram user id whose feed will be shown
-          placeholder: "user id"
-          default: ''
-          validate:
-            type: string
-
         feed_parameters.access_token:
           type: text
           size: large
           label: Access token
-          help: Instagram API access token
+          help: Instagram Basic Display API access token. This will only return results for the user who creates the token. 
           placeholder: "access token"
           default: ''
           validate:

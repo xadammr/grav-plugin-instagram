@@ -81,7 +81,7 @@ class InstagramPlugin extends Plugin
         // Get the results from the live API, cached version not found
         if (!$template_vars) {
             try {
-                $results = $instagram->getUserMedia();
+                $results = $instagram->getUserMedia("me", $numPosts);
             } catch (\RuntimeException $e) {
                 $this->grav['log']->error($e->getMessage());
                 return;
@@ -91,7 +91,10 @@ class InstagramPlugin extends Plugin
 
             if (isset($results->data)) {
                 $posts = array_map(function ($i) {
+                    //$i->caption;
+                    if (property_exists(get_class($i), 'caption')) { $caption = $i->caption; } else { $caption = "not set"; }
                     return [
+                        'caption' => $caption,
                         'media_url' => $i->media_url,
                         'permalink' => $i->permalink,
                         'timestamp' => $i->timestamp,
@@ -145,6 +148,7 @@ class InstagramPlugin extends Plugin
                 $r[$id]['image'] = $val['media_url'];
                 $r[$id]['type'] = $val['type'];
                 $r[$id]['link'] = $val['permalink'];
+                $r[$id]['caption'] = $val['caption'];
             }
             $this->addFeed($r);
             return true;
