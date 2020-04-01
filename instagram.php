@@ -92,7 +92,7 @@ class InstagramPlugin extends Plugin
             if (isset($results->data)) {
                 $posts = array_map(function ($i) {
                     //$i->caption;
-                    if (property_exists(get_class($i), 'caption')) { $caption = $i->caption; } else { $caption = "not set"; }
+                    if (property_exists(get_class($i), 'caption')) { $caption = $i->caption; } else { $caption = ""; }
                     return [
                         'caption' => $caption,
                         'media_url' => $i->media_url,
